@@ -1,0 +1,453 @@
+basePath: /
+definitions:
+  handlers.CreateLeaderboardRequest:
+    properties:
+      category:
+        example: tournament
+        type: string
+      description:
+        example: Weekly tournament for active players
+        type: string
+      end_date:
+        example: "2023-01-07T23:59:59Z"
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      max_entries:
+        example: 100
+        type: integer
+      name:
+        example: Weekly Tournament
+        type: string
+      sort_order:
+        enum:
+        - asc
+        - desc
+        example: desc
+        type: string
+      start_date:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      time_frame:
+        enum:
+        - daily
+        - weekly
+        - monthly
+        - yearly
+        - all_time
+        - custom
+        example: weekly
+        type: string
+      type:
+        enum:
+        - score
+        - time
+        - points
+        example: score
+        type: string
+      visibility_scope:
+        enum:
+        - public
+        - private
+        - restricted
+        example: public
+        type: string
+    type: object
+  handlers.LeaderboardResponse:
+    properties:
+      category:
+        example: tournament
+        type: string
+      created_at:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      description:
+        example: Weekly tournament for active players
+        type: string
+      end_date:
+        example: "2023-01-07T23:59:59Z"
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      max_entries:
+        example: 100
+        type: integer
+      name:
+        example: Weekly Tournament
+        type: string
+      sort_order:
+        example: desc
+        type: string
+      start_date:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      time_frame:
+        example: weekly
+        type: string
+      type:
+        example: score
+        type: string
+      updated_at:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      visibility_scope:
+        example: public
+        type: string
+    type: object
+  handlers.LoginRequest:
+    properties:
+      password:
+        example: password123
+        type: string
+      username:
+        example: admin
+        type: string
+    type: object
+  handlers.LoginResponse:
+    properties:
+      role:
+        example: admin
+        type: string
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      token_type:
+        example: Bearer
+        type: string
+      user_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    type: object
+  handlers.RegisterRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      password:
+        example: securepass123
+        type: string
+      username:
+        example: newuser
+        type: string
+    type: object
+  handlers.UpdateLeaderboardRequest:
+    properties:
+      category:
+        example: competition
+        type: string
+      description:
+        example: Updated description
+        type: string
+      end_date:
+        example: "2023-02-28T23:59:59Z"
+        type: string
+      is_active:
+        example: false
+        type: boolean
+      max_entries:
+        example: 50
+        type: integer
+      name:
+        example: Updated Tournament
+        type: string
+      sort_order:
+        enum:
+        - asc
+        - desc
+        example: asc
+        type: string
+      start_date:
+        example: "2023-02-01T00:00:00Z"
+        type: string
+      time_frame:
+        enum:
+        - daily
+        - weekly
+        - monthly
+        - yearly
+        - all_time
+        - custom
+        example: monthly
+        type: string
+      type:
+        enum:
+        - score
+        - time
+        - points
+        example: points
+        type: string
+      visibility_scope:
+        enum:
+        - public
+        - private
+        - restricted
+        example: restricted
+        type: string
+    type: object
+  middleware.ErrorResponse:
+    properties:
+      error: {}
+      message:
+        type: string
+      status:
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@example.com
+    name: API Support
+    url: http://www.example.com/support
+  description: API for managing leaderboards, entries, participants, and metrics
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Leaderboard Service API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate a user and generate a JWT token
+      parameters:
+      - description: Login credentials
+        in: body
+        name: loginRequest
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login successful
+          schema:
+            $ref: '#/definitions/handlers.LoginResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: Log in a user
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user account
+      parameters:
+      - description: Registration data
+        in: body
+        name: registerRequest
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Registration successful
+          schema:
+            $ref: '#/definitions/handlers.LoginResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: Register a new user
+      tags:
+      - auth
+  /leaderboards:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all leaderboards
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of leaderboards
+          schema:
+            items:
+              $ref: '#/definitions/handlers.LeaderboardResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List all leaderboards
+      tags:
+      - leaderboards
+    post:
+      consumes:
+      - application/json
+      description: Create a new leaderboard with the provided details
+      parameters:
+      - description: Leaderboard data
+        in: body
+        name: leaderboard
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateLeaderboardRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created leaderboard
+          schema:
+            $ref: '#/definitions/handlers.LeaderboardResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new leaderboard
+      tags:
+      - leaderboards
+  /leaderboards/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a leaderboard by its ID
+      parameters:
+      - description: Leaderboard ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No content
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a leaderboard
+      tags:
+      - leaderboards
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a leaderboard by its unique ID
+      parameters:
+      - description: Leaderboard ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Leaderboard details
+          schema:
+            $ref: '#/definitions/handlers.LeaderboardResponse'
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a leaderboard by ID
+      tags:
+      - leaderboards
+    put:
+      consumes:
+      - application/json
+      description: Update an existing leaderboard with the provided details
+      parameters:
+      - description: Leaderboard ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated leaderboard data
+        in: body
+        name: leaderboard
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateLeaderboardRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated leaderboard
+          schema:
+            $ref: '#/definitions/handlers.LeaderboardResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a leaderboard
+      tags:
+      - leaderboards
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and the JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

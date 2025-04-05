@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"leaderboard-service/db"
+	_ "leaderboard-service/docs" // Import generated Swagger docs
 	"leaderboard-service/migrations"
 	"leaderboard-service/models"
 	"leaderboard-service/router"
@@ -13,6 +14,21 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// @title Leaderboard Service API
+// @version 1.0
+// @description API for managing leaderboards, entries, participants, and metrics
+// @termsOfService http://swagger.io/terms/
+// @contact.name API Support
+// @contact.url http://www.example.com/support
+// @contact.email support@example.com
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+// @host localhost:8080
+// @BasePath /
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and the JWT token.
 func main() {
 	// Load environment variables
 	err := godotenv.Load()
@@ -34,12 +50,9 @@ func main() {
 		log.Fatal("Error migrating database: ", err)
 	}
 
-	// http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-	// 	fmt.Fprintf(w, "Hello World!")
-	// })
-
 	r := router.Router()
 
 	fmt.Println("Server is running on port 8080")
+	fmt.Println("Swagger UI is available at http://localhost:8080/swagger/index.html")
 	log.Fatal(http.ListenAndServe("localhost:8080", r))
 }
