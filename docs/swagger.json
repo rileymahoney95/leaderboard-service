@@ -110,6 +110,594 @@
                 }
             }
         },
+        "/leaderboard-entries": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a list of all entries/rankings for a specific leaderboard",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "leaderboard-entries"
+                ],
+                "summary": "List all entries for a leaderboard",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by leaderboard ID",
+                        "name": "leaderboard_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by participant ID",
+                        "name": "participant_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of leaderboard entries",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.LeaderboardEntryResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid query parameters",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new entry/ranking in a leaderboard",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "leaderboard-entries"
+                ],
+                "summary": "Create a new leaderboard entry",
+                "parameters": [
+                    {
+                        "description": "Leaderboard entry data",
+                        "name": "entry",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreateLeaderboardEntryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created leaderboard entry",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.LeaderboardEntryResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Leaderboard or participant not found",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/leaderboard-entries/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve a leaderboard entry by its unique ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "leaderboard-entries"
+                ],
+                "summary": "Get a leaderboard entry by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Leaderboard Entry ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Leaderboard entry details",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.LeaderboardEntryResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid ID",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update an existing leaderboard entry with the provided details",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "leaderboard-entries"
+                ],
+                "summary": "Update a leaderboard entry",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Leaderboard Entry ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated leaderboard entry data",
+                        "name": "entry",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.UpdateLeaderboardEntryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated leaderboard entry",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.LeaderboardEntryResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a leaderboard entry by its ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "leaderboard-entries"
+                ],
+                "summary": "Delete a leaderboard entry",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Leaderboard Entry ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "400": {
+                        "description": "Invalid ID",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/leaderboard-metrics": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a list of all metrics associated with a specific leaderboard",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "leaderboard-metrics"
+                ],
+                "summary": "List all metrics for a leaderboard",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by leaderboard ID",
+                        "name": "leaderboard_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of leaderboard metrics",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.LeaderboardMetricResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid query parameters",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new metric for a leaderboard",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "leaderboard-metrics"
+                ],
+                "summary": "Create a new leaderboard metric",
+                "parameters": [
+                    {
+                        "description": "Leaderboard metric data",
+                        "name": "metric",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreateLeaderboardMetricRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created leaderboard metric",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.LeaderboardMetricResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Leaderboard or metric not found",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/leaderboard-metrics/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve a leaderboard metric by its unique ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "leaderboard-metrics"
+                ],
+                "summary": "Get a leaderboard metric by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Leaderboard Metric ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Leaderboard metric details",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.LeaderboardMetricResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid ID",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update an existing leaderboard metric with the provided details",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "leaderboard-metrics"
+                ],
+                "summary": "Update a leaderboard metric",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Leaderboard Metric ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated leaderboard metric data",
+                        "name": "metric",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.UpdateLeaderboardMetricRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated leaderboard metric",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.LeaderboardMetricResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a leaderboard metric by its ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "leaderboard-metrics"
+                ],
+                "summary": "Delete a leaderboard metric",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Leaderboard Metric ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "400": {
+                        "description": "Invalid ID",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/leaderboards": {
             "get": {
                 "security": [
@@ -380,11 +968,350 @@
                     }
                 }
             }
+        },
+        "/participants": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a list of all participants",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "participants"
+                ],
+                "summary": "List all participants",
+                "responses": {
+                    "200": {
+                        "description": "List of participants",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.ParticipantResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new participant with the provided details",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "participants"
+                ],
+                "summary": "Create a new participant",
+                "parameters": [
+                    {
+                        "description": "Participant data",
+                        "name": "participant",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreateParticipantRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created participant",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ParticipantResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/participants/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve a participant by its unique ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "participants"
+                ],
+                "summary": "Get a participant by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Participant ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Participant details",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ParticipantResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid ID",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update an existing participant with the provided details",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "participants"
+                ],
+                "summary": "Update a participant",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Participant ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated participant data",
+                        "name": "participant",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.UpdateParticipantRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated participant",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ParticipantResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a participant by its ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "participants"
+                ],
+                "summary": "Delete a participant",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Participant ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "400": {
+                        "description": "Invalid ID",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "handlers.CreateLeaderboardEntryRequest": {
+            "type": "object",
+            "required": [
+                "leaderboard_id",
+                "participant_id",
+                "rank",
+                "score"
+            ],
+            "properties": {
+                "last_updated": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "leaderboard_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "participant_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440001"
+                },
+                "rank": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 1
+                },
+                "score": {
+                    "type": "number",
+                    "example": 100.5
+                }
+            }
+        },
+        "handlers.CreateLeaderboardMetricRequest": {
+            "type": "object",
+            "required": [
+                "leaderboard_id",
+                "metric_id",
+                "weight"
+            ],
+            "properties": {
+                "display_priority": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 0
+                },
+                "leaderboard_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "metric_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440003"
+                },
+                "weight": {
+                    "type": "number",
+                    "minimum": 0,
+                    "example": 1
+                }
+            }
+        },
         "handlers.CreateLeaderboardRequest": {
             "type": "object",
+            "required": [
+                "category",
+                "name",
+                "sort_order",
+                "time_frame",
+                "type",
+                "visibility_scope"
+            ],
             "properties": {
                 "category": {
                     "type": "string",
@@ -404,6 +1331,7 @@
                 },
                 "max_entries": {
                     "type": "integer",
+                    "minimum": 1,
                     "example": 100
                 },
                 "name": {
@@ -413,10 +1341,10 @@
                 "sort_order": {
                     "type": "string",
                     "enum": [
-                        "asc",
-                        "desc"
+                        "ascending",
+                        "descending"
                     ],
-                    "example": "desc"
+                    "example": "descending"
                 },
                 "start_date": {
                     "type": "string",
@@ -429,7 +1357,7 @@
                         "weekly",
                         "monthly",
                         "yearly",
-                        "all_time",
+                        "all-time",
                         "custom"
                     ],
                     "example": "weekly"
@@ -437,20 +1365,118 @@
                 "type": {
                     "type": "string",
                     "enum": [
-                        "score",
-                        "time",
-                        "points"
+                        "individual",
+                        "team"
                     ],
-                    "example": "score"
+                    "example": "individual"
                 },
                 "visibility_scope": {
                     "type": "string",
                     "enum": [
                         "public",
-                        "private",
-                        "restricted"
+                        "private"
                     ],
                     "example": "public"
+                }
+            }
+        },
+        "handlers.CreateParticipantRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "type"
+            ],
+            "properties": {
+                "external_id": {
+                    "type": "string",
+                    "example": "external-123"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "individual",
+                        "team",
+                        "group"
+                    ],
+                    "example": "individual"
+                }
+            }
+        },
+        "handlers.LeaderboardEntryResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440002"
+                },
+                "last_updated": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "leaderboard_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "participant_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440001"
+                },
+                "rank": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "score": {
+                    "type": "number",
+                    "example": 100.5
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                }
+            }
+        },
+        "handlers.LeaderboardMetricResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "display_priority": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440004"
+                },
+                "leaderboard_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "metric_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440003"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "weight": {
+                    "type": "number",
+                    "example": 1
                 }
             }
         },
@@ -491,7 +1517,7 @@
                 },
                 "sort_order": {
                     "type": "string",
-                    "example": "desc"
+                    "example": "descending"
                 },
                 "start_date": {
                     "type": "string",
@@ -503,7 +1529,7 @@
                 },
                 "type": {
                     "type": "string",
-                    "example": "score"
+                    "example": "individual"
                 },
                 "updated_at": {
                     "type": "string",
@@ -549,6 +1575,39 @@
                 }
             }
         },
+        "handlers.ParticipantResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "external_id": {
+                    "type": "string",
+                    "example": "external-123"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "individual"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                }
+            }
+        },
         "handlers.RegisterRequest": {
             "type": "object",
             "properties": {
@@ -563,6 +1622,39 @@
                 "username": {
                     "type": "string",
                     "example": "newuser"
+                }
+            }
+        },
+        "handlers.UpdateLeaderboardEntryRequest": {
+            "type": "object",
+            "properties": {
+                "last_updated": {
+                    "type": "string",
+                    "example": "2023-01-02T00:00:00Z"
+                },
+                "rank": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 2
+                },
+                "score": {
+                    "type": "number",
+                    "example": 200.75
+                }
+            }
+        },
+        "handlers.UpdateLeaderboardMetricRequest": {
+            "type": "object",
+            "properties": {
+                "display_priority": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 1
+                },
+                "weight": {
+                    "type": "number",
+                    "minimum": 0,
+                    "example": 2.5
                 }
             }
         },
@@ -587,6 +1679,7 @@
                 },
                 "max_entries": {
                     "type": "integer",
+                    "minimum": 1,
                     "example": 50
                 },
                 "name": {
@@ -596,10 +1689,10 @@
                 "sort_order": {
                     "type": "string",
                     "enum": [
-                        "asc",
-                        "desc"
+                        "ascending",
+                        "descending"
                     ],
-                    "example": "asc"
+                    "example": "ascending"
                 },
                 "start_date": {
                     "type": "string",
@@ -612,7 +1705,7 @@
                         "weekly",
                         "monthly",
                         "yearly",
-                        "all_time",
+                        "all-time",
                         "custom"
                     ],
                     "example": "monthly"
@@ -620,20 +1713,44 @@
                 "type": {
                     "type": "string",
                     "enum": [
-                        "score",
-                        "time",
-                        "points"
+                        "individual",
+                        "team"
                     ],
-                    "example": "points"
+                    "example": "team"
                 },
                 "visibility_scope": {
                     "type": "string",
                     "enum": [
                         "public",
-                        "private",
-                        "restricted"
+                        "private"
                     ],
-                    "example": "restricted"
+                    "example": "private"
+                }
+            }
+        },
+        "handlers.UpdateParticipantRequest": {
+            "type": "object",
+            "properties": {
+                "external_id": {
+                    "type": "string",
+                    "example": "external-123"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Jane Doe"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "individual",
+                        "team",
+                        "group"
+                    ],
+                    "example": "team"
                 }
             }
         },

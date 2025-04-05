@@ -59,6 +59,51 @@ func Router() http.Handler {
 				r.Delete("/{id}", handlers.DeleteLeaderboard)
 			})
 		})
+
+		// Participant routes
+		r.Route("/participants", func(r chi.Router) {
+			// Public participant endpoints - any authenticated user can access
+			r.Get("/", handlers.ListParticipants)
+			r.Get("/{id}", handlers.GetParticipant)
+
+			// Admin-only participant endpoints
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireAnyRole(middleware.RoleAdmin, middleware.RoleModerator))
+				r.Post("/", handlers.CreateParticipant)
+				r.Put("/{id}", handlers.UpdateParticipant)
+				r.Delete("/{id}", handlers.DeleteParticipant)
+			})
+		})
+
+		// Leaderboard Entry routes
+		r.Route("/leaderboard-entries", func(r chi.Router) {
+			// Public leaderboard entry endpoints - any authenticated user can access
+			r.Get("/", handlers.ListLeaderboardEntries)
+			r.Get("/{id}", handlers.GetLeaderboardEntry)
+
+			// Admin-only leaderboard entry endpoints
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireAnyRole(middleware.RoleAdmin, middleware.RoleModerator))
+				r.Post("/", handlers.CreateLeaderboardEntry)
+				r.Put("/{id}", handlers.UpdateLeaderboardEntry)
+				r.Delete("/{id}", handlers.DeleteLeaderboardEntry)
+			})
+		})
+
+		// Leaderboard Metric routes
+		r.Route("/leaderboard-metrics", func(r chi.Router) {
+			// Public leaderboard metric endpoints - any authenticated user can access
+			r.Get("/", handlers.ListLeaderboardMetrics)
+			r.Get("/{id}", handlers.GetLeaderboardMetric)
+
+			// Admin-only leaderboard metric endpoints
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireAnyRole(middleware.RoleAdmin, middleware.RoleModerator))
+				r.Post("/", handlers.CreateLeaderboardMetric)
+				r.Put("/{id}", handlers.UpdateLeaderboardMetric)
+				r.Delete("/{id}", handlers.DeleteLeaderboardMetric)
+			})
+		})
 	})
 
 	return r

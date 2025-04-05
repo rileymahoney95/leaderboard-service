@@ -126,3 +126,50 @@ swag init -g main.go
 ```
 
 This command reads the annotations in your code and generates updated documentation.
+
+## Troubleshooting
+
+### Regenerating Swagger Documentation
+
+If you encounter issues with Swagger documentation not displaying all routes or getting errors during swagger generation, follow these steps:
+
+1. Install the Swagger CLI tool if not already installed:
+
+   ```bash
+   go install github.com/swaggo/swag/cmd/swag@latest
+   ```
+
+2. If you encounter errors with complex JSON objects in example annotations, simplify the examples. For metadata fields and other complex objects, use empty strings as examples instead of JSON objects:
+
+   ```go
+   // Instead of this:
+   // example:"{\"country\":\"USA\",\"age\":25}"
+
+   // Use this:
+   // example:""
+   ```
+
+3. Run the Swagger initialization command:
+
+   ```bash
+   ~/go/bin/swag init
+   ```
+
+   Or if the swag command is in your PATH:
+
+   ```bash
+   swag init
+   ```
+
+4. Verify the generated files in the `docs` directory:
+
+   - `docs/docs.go`
+   - `docs/swagger.json`
+   - `docs/swagger.yaml`
+
+5. Restart your application and access the Swagger UI at:
+   ```
+   http://localhost:8080/swagger/index.html
+   ```
+
+These steps will ensure that all your routes, including new endpoints for participants, leaderboard entries, and metrics, are properly documented and accessible in the Swagger UI.
