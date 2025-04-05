@@ -422,7 +422,7 @@ const docTemplate = `{
                         "asc",
                         "desc"
                     ],
-                    "example": "desc"
+                    "example": "descending"
                 },
                 "start_date": {
                     "type": "string",
@@ -447,7 +447,7 @@ const docTemplate = `{
                         "time",
                         "points"
                     ],
-                    "example": "score"
+                    "example": "individual"
                 },
                 "visibility_scope": {
                     "type": "string",
