@@ -9,7 +9,7 @@ import (
 	"leaderboard-service/db/migrations"
 	_ "leaderboard-service/docs" // Import generated Swagger docs
 	"leaderboard-service/models"
-	"leaderboard-service/router"
+	"leaderboard-service/routes"
 
 	"github.com/joho/godotenv"
 )

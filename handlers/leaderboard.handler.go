@@ -5,11 +5,10 @@ import (
 	"net/http"
 	"time"
 
-	"leaderboard-service/db"
 	"leaderboard-service/enums"
 	"leaderboard-service/middleware"
-	"leaderboard-service/models"
-	"leaderboard-service/utils"
+	"leaderboard-service/repositories"
+	"leaderboard-service/services"
 	"leaderboard-service/validation"
 
 	"github.com/go-chi/chi/v5"
@@ -65,6 +64,18 @@ type LeaderboardResponse struct {
 	UpdatedAt       time.Time `json:"updated_at" example:"2023-01-01T00:00:00Z"`
 }
 
+type LeaderboardHandler struct {
+	service services.LeaderboardService
+}
+
+func NewLeaderboardHandler() *LeaderboardHandler {
+	repo := repositories.NewLeaderboardRepository()
+	service := services.NewLeaderboardService(repo)
+	return &LeaderboardHandler{
+		service: service,
+	}
+}
+
 // CreateLeaderboard creates a new leaderboard
 // @Summary Create a new leaderboard
 // @Description Create a new leaderboard with the provided details
@@ -78,7 +89,7 @@ type LeaderboardResponse struct {
 // @Failure 401 {object} middleware.ErrorResponse "Unauthorized"
 // @Failure 500 {object} middleware.ErrorResponse "Server error"
 // @Router /leaderboards [post]
-func CreateLeaderboard(w http.ResponseWriter, r *http.Request) {
+func (h *LeaderboardHandler) CreateLeaderboard(w http.ResponseWriter, r *http.Request) {
 	var req CreateLeaderboardRequest
 
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -94,24 +105,20 @@ func CreateLeaderboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Parse optional dates
-	startDate, endDate := utils.ValidateDates(req.StartDate, req.EndDate)
+	leaderboard, err := h.service.CreateLeaderboard(
+		req.Name,
+		req.Description,
+		req.Category,
+		enums.LeaderboardType(req.Type),
+		enums.TimeFrame(req.TimeFrame),
+		req.StartDate,
+		req.EndDate,
+		enums.SortOrder(req.SortOrder),
+		enums.VisibilityScope(req.VisibilityScope),
+		req.MaxEntries,
+		req.IsActive,
+	)
 
-	leaderboard := models.Leaderboard{
-		Name:            req.Name,
-		Description:     req.Description,
-		Category:        req.Category,
-		Type:            enums.LeaderboardType(req.Type),
-		TimeFrame:       enums.TimeFrame(req.TimeFrame),
-		StartDate:       startDate,
-		EndDate:         endDate,
-		SortOrder:       enums.SortOrder(req.SortOrder),
-		VisibilityScope: enums.VisibilityScope(req.VisibilityScope),
-		MaxEntries:      req.MaxEntries,
-		IsActive:        req.IsActive,
-	}
-
-	err = db.DB.Create(&leaderboard).Error
 	if err != nil {
 		middleware.RespondWithError(w, http.StatusInternalServerError, "Failed to create leaderboard", err)
 		return
@@ -133,7 +140,7 @@ func CreateLeaderboard(w http.ResponseWriter, r *http.Request) {
 // @Failure 401 {object} middleware.ErrorResponse "Unauthorized"
 // @Failure 404 {object} middleware.ErrorResponse "Not found"
 // @Router /leaderboards/{id} [get]
-func GetLeaderboard(w http.ResponseWriter, r *http.Request) {
+func (h *LeaderboardHandler) GetLeaderboard(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	leaderboardId, err := uuid.Parse(idParam)
 	if err != nil {
@@ -141,11 +148,9 @@ func GetLeaderboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	leaderboard := models.Leaderboard{}
-	db.DB.First(&leaderboard, "id = ?", leaderboardId)
-
-	if leaderboard.ID == uuid.Nil {
-		middleware.RespondWithError(w, http.StatusNotFound, "Leaderboard not found", nil)
+	leaderboard, err := h.service.GetLeaderboard(leaderboardId)
+	if err != nil {
+		middleware.RespondWithError(w, http.StatusNotFound, "Leaderboard not found", err)
 		return
 	}
 
@@ -162,9 +167,12 @@ func GetLeaderboard(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {array} LeaderboardResponse "List of leaderboards"
 // @Failure 401 {object} middleware.ErrorResponse "Unauthorized"
 // @Router /leaderboards [get]
-func ListLeaderboards(w http.ResponseWriter, r *http.Request) {
-	leaderboards := []models.Leaderboard{}
-	db.DB.Find(&leaderboards)
+func (h *LeaderboardHandler) ListLeaderboards(w http.ResponseWriter, r *http.Request) {
+	leaderboards, err := h.service.ListLeaderboards()
+	if err != nil {
+		middleware.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch leaderboards", err)
+		return
+	}
 
 	middleware.RespondWithJSON(w, http.StatusOK, leaderboards)
 }
@@ -184,18 +192,11 @@ func ListLeaderboards(w http.ResponseWriter, r *http.Request) {
 // @Failure 404 {object} middleware.ErrorResponse "Not found"
 // @Failure 500 {object} middleware.ErrorResponse "Server error"
 // @Router /leaderboards/{id} [put]
-func UpdateLeaderboard(w http.ResponseWriter, r *http.Request) {
+func (h *LeaderboardHandler) UpdateLeaderboard(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	leaderboardID, err := uuid.Parse(idParam)
 	if err != nil {
 		middleware.RespondWithError(w, http.StatusBadRequest, "Invalid leaderboard ID", err)
-		return
-	}
-
-	// Fetch existing leaderboard
-	var leaderboard models.Leaderboard
-	if err := db.DB.First(&leaderboard, "id = ?", leaderboardID).Error; err != nil {
-		middleware.RespondWithError(w, http.StatusNotFound, "Leaderboard not found", err)
 		return
 	}
 
@@ -213,51 +214,56 @@ func UpdateLeaderboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Apply the updates to the leaderboard
-	if req.Name != nil {
-		leaderboard.Name = *req.Name
-	}
-	if req.Description != nil {
-		leaderboard.Description = *req.Description
-	}
-	if req.Category != nil {
-		leaderboard.Category = *req.Category
-	}
+	// Convert string types to enum types
+	var leaderboardType *enums.LeaderboardType
 	if req.Type != nil {
-		leaderboard.Type = enums.LeaderboardType(*req.Type)
-	}
-	if req.TimeFrame != nil {
-		leaderboard.TimeFrame = enums.TimeFrame(*req.TimeFrame)
-	}
-	if req.StartDate != nil || req.EndDate != nil {
-		startDate, endDate := utils.ValidateDates(req.StartDate, req.EndDate)
-		if req.StartDate != nil {
-			leaderboard.StartDate = startDate
-		}
-		if req.EndDate != nil {
-			leaderboard.EndDate = endDate
-		}
-	}
-	if req.SortOrder != nil {
-		leaderboard.SortOrder = enums.SortOrder(*req.SortOrder)
-	}
-	if req.VisibilityScope != nil {
-		leaderboard.VisibilityScope = enums.VisibilityScope(*req.VisibilityScope)
-	}
-	if req.MaxEntries != nil {
-		leaderboard.MaxEntries = *req.MaxEntries
-	}
-	if req.IsActive != nil {
-		leaderboard.IsActive = *req.IsActive
+		lt := enums.LeaderboardType(*req.Type)
+		leaderboardType = &lt
 	}
 
-	// Save the updated record
-	if err := db.DB.Save(&leaderboard).Error; err != nil {
+	var timeFrame *enums.TimeFrame
+	if req.TimeFrame != nil {
+		tf := enums.TimeFrame(*req.TimeFrame)
+		timeFrame = &tf
+	}
+
+	var sortOrder *enums.SortOrder
+	if req.SortOrder != nil {
+		so := enums.SortOrder(*req.SortOrder)
+		sortOrder = &so
+	}
+
+	var visibilityScope *enums.VisibilityScope
+	if req.VisibilityScope != nil {
+		vs := enums.VisibilityScope(*req.VisibilityScope)
+		visibilityScope = &vs
+	}
+
+	updatedLeaderboard, err := h.service.UpdateLeaderboard(
+		leaderboardID,
+		req.Name,
+		req.Description,
+		req.Category,
+		leaderboardType,
+		timeFrame,
+		req.StartDate,
+		req.EndDate,
+		sortOrder,
+		visibilityScope,
+		req.MaxEntries,
+		req.IsActive,
+	)
+
+	if err != nil {
+		if err.Error() == "leaderboard not found" {
+			middleware.RespondWithError(w, http.StatusNotFound, "Leaderboard not found", err)
+			return
+		}
 		middleware.RespondWithError(w, http.StatusInternalServerError, "Failed to update leaderboard", err)
 		return
 	}
 
-	middleware.RespondWithJSON(w, http.StatusOK, leaderboard)
+	middleware.RespondWithJSON(w, http.StatusOK, updatedLeaderboard)
 }
 
 // DeleteLeaderboard deletes a leaderboard by ID
@@ -274,7 +280,7 @@ func UpdateLeaderboard(w http.ResponseWriter, r *http.Request) {
 // @Failure 404 {object} middleware.ErrorResponse "Not found"
 // @Failure 500 {object} middleware.ErrorResponse "Server error"
 // @Router /leaderboards/{id} [delete]
-func DeleteLeaderboard(w http.ResponseWriter, r *http.Request) {
+func (h *LeaderboardHandler) DeleteLeaderboard(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	leaderboardID, err := uuid.Parse(idParam)
 	if err != nil {
@@ -282,13 +288,12 @@ func DeleteLeaderboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	leaderboard := models.Leaderboard{}
-	if err := db.DB.First(&leaderboard, "id = ?", leaderboardID).Error; err != nil {
-		middleware.RespondWithError(w, http.StatusNotFound, "Leaderboard not found", err)
-		return
-	}
-
-	if err := db.DB.Delete(&models.Leaderboard{}, "id = ?", leaderboardID).Error; err != nil {
+	err = h.service.DeleteLeaderboard(leaderboardID)
+	if err != nil {
+		if err.Error() == "leaderboard not found" {
+			middleware.RespondWithError(w, http.StatusNotFound, "Leaderboard not found", err)
+			return
+		}
 		middleware.RespondWithError(w, http.StatusInternalServerError, "Failed to delete leaderboard", err)
 		return
 	}

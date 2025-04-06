@@ -14,24 +14,27 @@ func init() {
 
 // setupMetricRoutes configures all routes related to metrics
 func setupMetricRoutes(r chi.Router) {
+	metricHandler := handlers.NewMetricHandler()
+	metricValueHandler := handlers.NewMetricValueHandler()
+
 	// Metric routes
 	r.Route("/metrics", func(r chi.Router) {
 		// Public metric endpoints - any authenticated user can access
-		r.Get("/", handlers.ListMetrics)
-		r.Get("/{id}", handlers.GetMetric)
+		r.Get("/", metricHandler.ListMetrics)
+		r.Get("/{id}", metricHandler.GetMetric)
 
 		// Nested routes for metric values
-		r.Get("/{id}/values", handlers.ListMetricValues) // Get all values for a specific metric
+		r.Get("/{id}/values", metricValueHandler.ListMetricValues) // Get all values for a specific metric
 
 		// Admin-only metric endpoints
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.RequireAnyRole(middleware.RoleAdmin, middleware.RoleModerator))
-			r.Post("/", handlers.CreateMetric)
-			r.Put("/{id}", handlers.UpdateMetric)
-			r.Delete("/{id}", handlers.DeleteMetric)
+			r.Post("/", metricHandler.CreateMetric)
+			r.Put("/{id}", metricHandler.UpdateMetric)
+			r.Delete("/{id}", metricHandler.DeleteMetric)
 
 			// Admin-only nested routes
-			r.Post("/{id}/values", handlers.CreateMetricValue) // Create a new value for a specific metric
+			r.Post("/{id}/values", metricValueHandler.CreateMetricValue) // Create a new value for a specific metric
 		})
 	})
 }

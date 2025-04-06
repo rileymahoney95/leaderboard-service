@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"leaderboard-service/db"
 	"leaderboard-service/middleware"
-	"leaderboard-service/models"
+	"leaderboard-service/repositories"
+	"leaderboard-service/services"
 	"leaderboard-service/validation"
 
 	"github.com/go-chi/chi/v5"
@@ -42,6 +42,18 @@ type ParticipantResponse struct {
 	UpdatedAt  time.Time              `json:"updated_at" example:"2023-01-01T00:00:00Z"`
 }
 
+type ParticipantHandler struct {
+	service services.ParticipantService
+}
+
+func NewParticipantHandler() *ParticipantHandler {
+	repo := repositories.NewParticipantRepository()
+	service := services.NewParticipantService(repo)
+	return &ParticipantHandler{
+		service: service,
+	}
+}
+
 // CreateParticipant creates a new participant
 // @Summary Create a new participant
 // @Description Create a new participant with the provided details
@@ -55,7 +67,7 @@ type ParticipantResponse struct {
 // @Failure 401 {object} middleware.ErrorResponse "Unauthorized"
 // @Failure 500 {object} middleware.ErrorResponse "Server error"
 // @Router /participants [post]
-func CreateParticipant(w http.ResponseWriter, r *http.Request) {
+func (h *ParticipantHandler) CreateParticipant(w http.ResponseWriter, r *http.Request) {
 	var req CreateParticipantRequest
 
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -71,14 +83,13 @@ func CreateParticipant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	participant := models.Participant{
-		ExternalID: req.ExternalID,
-		Name:       req.Name,
-		Type:       req.Type,
-		Metadata:   req.Metadata,
-	}
+	participant, err := h.service.CreateParticipant(
+		req.ExternalID,
+		req.Name,
+		req.Type,
+		req.Metadata,
+	)
 
-	err = db.DB.Create(&participant).Error
 	if err != nil {
 		middleware.RespondWithError(w, http.StatusInternalServerError, "Failed to create participant", err)
 		return
@@ -100,7 +111,7 @@ func CreateParticipant(w http.ResponseWriter, r *http.Request) {
 // @Failure 401 {object} middleware.ErrorResponse "Unauthorized"
 // @Failure 404 {object} middleware.ErrorResponse "Not found"
 // @Router /participants/{id} [get]
-func GetParticipant(w http.ResponseWriter, r *http.Request) {
+func (h *ParticipantHandler) GetParticipant(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	participantID, err := uuid.Parse(idParam)
 	if err != nil {
@@ -108,8 +119,8 @@ func GetParticipant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	participant := models.Participant{}
-	if err := db.DB.First(&participant, "id = ?", participantID).Error; err != nil {
+	participant, err := h.service.GetParticipant(participantID)
+	if err != nil {
 		middleware.RespondWithError(w, http.StatusNotFound, "Participant not found", err)
 		return
 	}
@@ -127,9 +138,12 @@ func GetParticipant(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {array} ParticipantResponse "List of participants"
 // @Failure 401 {object} middleware.ErrorResponse "Unauthorized"
 // @Router /participants [get]
-func ListParticipants(w http.ResponseWriter, r *http.Request) {
-	participants := []models.Participant{}
-	db.DB.Find(&participants)
+func (h *ParticipantHandler) ListParticipants(w http.ResponseWriter, r *http.Request) {
+	participants, err := h.service.ListParticipants()
+	if err != nil {
+		middleware.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch participants", err)
+		return
+	}
 
 	middleware.RespondWithJSON(w, http.StatusOK, participants)
 }
@@ -149,18 +163,11 @@ func ListParticipants(w http.ResponseWriter, r *http.Request) {
 // @Failure 404 {object} middleware.ErrorResponse "Not found"
 // @Failure 500 {object} middleware.ErrorResponse "Server error"
 // @Router /participants/{id} [put]
-func UpdateParticipant(w http.ResponseWriter, r *http.Request) {
+func (h *ParticipantHandler) UpdateParticipant(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	participantID, err := uuid.Parse(idParam)
 	if err != nil {
 		middleware.RespondWithError(w, http.StatusBadRequest, "Invalid participant ID", err)
-		return
-	}
-
-	// Fetch existing participant
-	var participant models.Participant
-	if err := db.DB.First(&participant, "id = ?", participantID).Error; err != nil {
-		middleware.RespondWithError(w, http.StatusNotFound, "Participant not found", err)
 		return
 	}
 
@@ -178,27 +185,31 @@ func UpdateParticipant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Apply the updates to the participant
-	if req.ExternalID != nil {
-		participant.ExternalID = *req.ExternalID
-	}
-	if req.Name != nil {
-		participant.Name = *req.Name
-	}
-	if req.Type != nil {
-		participant.Type = *req.Type
-	}
+	// Convert metadata to interface{} type
+	var metadataInterface *interface{}
 	if req.Metadata != nil {
-		participant.Metadata = *req.Metadata
+		metadataAsInterface := interface{}(*req.Metadata)
+		metadataInterface = &metadataAsInterface
 	}
 
-	// Save the updated record
-	if err := db.DB.Save(&participant).Error; err != nil {
+	updatedParticipant, err := h.service.UpdateParticipant(
+		participantID,
+		req.ExternalID,
+		req.Name,
+		req.Type,
+		metadataInterface,
+	)
+
+	if err != nil {
+		if err.Error() == "participant not found" {
+			middleware.RespondWithError(w, http.StatusNotFound, "Participant not found", err)
+			return
+		}
 		middleware.RespondWithError(w, http.StatusInternalServerError, "Failed to update participant", err)
 		return
 	}
 
-	middleware.RespondWithJSON(w, http.StatusOK, participant)
+	middleware.RespondWithJSON(w, http.StatusOK, updatedParticipant)
 }
 
 // DeleteParticipant deletes a participant by ID
@@ -215,7 +226,7 @@ func UpdateParticipant(w http.ResponseWriter, r *http.Request) {
 // @Failure 404 {object} middleware.ErrorResponse "Not found"
 // @Failure 500 {object} middleware.ErrorResponse "Server error"
 // @Router /participants/{id} [delete]
-func DeleteParticipant(w http.ResponseWriter, r *http.Request) {
+func (h *ParticipantHandler) DeleteParticipant(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	participantID, err := uuid.Parse(idParam)
 	if err != nil {
@@ -223,15 +234,12 @@ func DeleteParticipant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if the participant exists
-	participant := models.Participant{}
-	if err := db.DB.First(&participant, "id = ?", participantID).Error; err != nil {
-		middleware.RespondWithError(w, http.StatusNotFound, "Participant not found", err)
-		return
-	}
-
-	// Delete the participant
-	if err := db.DB.Delete(&models.Participant{}, "id = ?", participantID).Error; err != nil {
+	err = h.service.DeleteParticipant(participantID)
+	if err != nil {
+		if err.Error() == "participant not found" {
+			middleware.RespondWithError(w, http.StatusNotFound, "Participant not found", err)
+			return
+		}
 		middleware.RespondWithError(w, http.StatusInternalServerError, "Failed to delete participant", err)
 		return
 	}

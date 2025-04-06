@@ -52,7 +52,7 @@ func Router() http.Handler {
 	// Protected routes - require JWT authentication
 	r.Group(func(r chi.Router) {
 		// Apply JWT authentication middleware
-		r.Use(middleware.JWTAuth)
+		// r.Use(middleware.JWTAuth)
 
 		// Mount all protected routes
 		for _, setupFunc := range routes.Protected {

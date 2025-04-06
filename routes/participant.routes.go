@@ -14,24 +14,27 @@ func init() {
 
 // setupParticipantRoutes configures all routes related to participants
 func setupParticipantRoutes(r chi.Router) {
+	participantHandler := handlers.NewParticipantHandler()
+	metricValueHandler := handlers.NewMetricValueHandler()
+
 	// Participant routes
 	r.Route("/participants", func(r chi.Router) {
 		// Public participant endpoints - any authenticated user can access
-		r.Get("/", handlers.ListParticipants)
-		r.Get("/{id}", handlers.GetParticipant)
+		r.Get("/", participantHandler.ListParticipants)
+		r.Get("/{id}", participantHandler.GetParticipant)
 
 		// Nested routes for participant's metric values
-		r.Get("/{id}/metric-values", handlers.ListMetricValues) // Get all metric values for a specific participant
+		r.Get("/{id}/metric-values", metricValueHandler.ListMetricValues) // Get all metric values for a specific participant
 
 		// Admin-only participant endpoints
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.RequireAnyRole(middleware.RoleAdmin, middleware.RoleModerator))
-			r.Post("/", handlers.CreateParticipant)
-			r.Put("/{id}", handlers.UpdateParticipant)
-			r.Delete("/{id}", handlers.DeleteParticipant)
+			r.Post("/", participantHandler.CreateParticipant)
+			r.Put("/{id}", participantHandler.UpdateParticipant)
+			r.Delete("/{id}", participantHandler.DeleteParticipant)
 
 			// Admin-only nested routes
-			r.Post("/{id}/metric-values", handlers.CreateMetricValue) // Record a new metric value for a participant
+			r.Post("/{id}/metric-values", metricValueHandler.CreateMetricValue) // Record a new metric value for a participant
 		})
 	})
 }

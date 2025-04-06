@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"leaderboard-service/db"
 	"leaderboard-service/middleware"
-	"leaderboard-service/models"
+	"leaderboard-service/repositories"
+	"leaderboard-service/services"
 	"leaderboard-service/validation"
 
 	"github.com/go-chi/chi/v5"
@@ -43,6 +43,21 @@ type LeaderboardEntryResponse struct {
 	UpdatedAt     time.Time `json:"updated_at" example:"2023-01-01T00:00:00Z"`
 }
 
+type LeaderboardEntryHandler struct {
+	service services.LeaderboardEntryService
+}
+
+func NewLeaderboardEntryHandler() *LeaderboardEntryHandler {
+	leaderboardEntryRepo := repositories.NewLeaderboardEntryRepository()
+	leaderboardRepo := repositories.NewLeaderboardRepository()
+	participantRepo := repositories.NewParticipantRepository()
+	service := services.NewLeaderboardEntryService(leaderboardEntryRepo, leaderboardRepo, participantRepo)
+
+	return &LeaderboardEntryHandler{
+		service: service,
+	}
+}
+
 // CreateLeaderboardEntry creates a new leaderboard entry
 // @Summary Create a new leaderboard entry
 // @Description Create a new entry/ranking in a leaderboard
@@ -59,7 +74,7 @@ type LeaderboardEntryResponse struct {
 // @Failure 500 {object} middleware.ErrorResponse "Server error"
 // @Router /leaderboard-entries [post]
 // @Router /leaderboards/{leaderboard_id}/entries [post]
-func CreateLeaderboardEntry(w http.ResponseWriter, r *http.Request) {
+func (h *LeaderboardEntryHandler) CreateLeaderboardEntry(w http.ResponseWriter, r *http.Request) {
 	var req CreateLeaderboardEntryRequest
 
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -96,41 +111,24 @@ func CreateLeaderboardEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Verify leaderboard exists
-	var leaderboard models.Leaderboard
-	if err := db.DB.First(&leaderboard, "id = ?", leaderboardID).Error; err != nil {
-		middleware.RespondWithError(w, http.StatusNotFound, "Leaderboard not found", err)
-		return
-	}
+	entry, err := h.service.CreateLeaderboardEntry(
+		leaderboardID,
+		participantID,
+		req.Score,
+		req.Rank,
+		req.LastUpdated,
+	)
 
-	// Verify participant exists
-	var participant models.Participant
-	if err := db.DB.First(&participant, "id = ?", participantID).Error; err != nil {
-		middleware.RespondWithError(w, http.StatusNotFound, "Participant not found", err)
-		return
-	}
-
-	// Set last updated to current time if not provided
-	lastUpdated := req.LastUpdated
-	if lastUpdated.IsZero() {
-		lastUpdated = time.Now()
-	}
-
-	leaderboardEntry := models.LeaderboardEntry{
-		LeaderboardID: leaderboardID,
-		ParticipantID: participantID,
-		Rank:          req.Rank,
-		Score:         req.Score,
-		LastUpdated:   lastUpdated,
-	}
-
-	err = db.DB.Create(&leaderboardEntry).Error
 	if err != nil {
+		if err.Error() == "leaderboard not found" || err.Error() == "participant not found" {
+			middleware.RespondWithError(w, http.StatusNotFound, err.Error(), err)
+			return
+		}
 		middleware.RespondWithError(w, http.StatusInternalServerError, "Failed to create leaderboard entry", err)
 		return
 	}
 
-	middleware.RespondWithJSON(w, http.StatusCreated, leaderboardEntry)
+	middleware.RespondWithJSON(w, http.StatusCreated, entry)
 }
 
 // GetLeaderboardEntry retrieves a leaderboard entry by ID
@@ -146,7 +144,7 @@ func CreateLeaderboardEntry(w http.ResponseWriter, r *http.Request) {
 // @Failure 401 {object} middleware.ErrorResponse "Unauthorized"
 // @Failure 404 {object} middleware.ErrorResponse "Not found"
 // @Router /leaderboard-entries/{id} [get]
-func GetLeaderboardEntry(w http.ResponseWriter, r *http.Request) {
+func (h *LeaderboardEntryHandler) GetLeaderboardEntry(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	entryID, err := uuid.Parse(idParam)
 	if err != nil {
@@ -154,8 +152,8 @@ func GetLeaderboardEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entry := models.LeaderboardEntry{}
-	if err := db.DB.First(&entry, "id = ?", entryID).Error; err != nil {
+	entry, err := h.service.GetLeaderboardEntry(entryID)
+	if err != nil {
 		middleware.RespondWithError(w, http.StatusNotFound, "Leaderboard entry not found", err)
 		return
 	}
@@ -177,7 +175,7 @@ func GetLeaderboardEntry(w http.ResponseWriter, r *http.Request) {
 // @Failure 401 {object} middleware.ErrorResponse "Unauthorized"
 // @Router /leaderboard-entries [get]
 // @Router /leaderboards/{leaderboard_id}/entries [get]
-func ListLeaderboardEntries(w http.ResponseWriter, r *http.Request) {
+func (h *LeaderboardEntryHandler) ListLeaderboardEntries(w http.ResponseWriter, r *http.Request) {
 	// Get query parameters
 	participantIDParam := r.URL.Query().Get("participant_id")
 
@@ -189,30 +187,34 @@ func ListLeaderboardEntries(w http.ResponseWriter, r *http.Request) {
 		leaderboardIDParam = r.URL.Query().Get("leaderboard_id")
 	}
 
-	entries := []models.LeaderboardEntry{}
-	query := db.DB
+	var leaderboardID *uuid.UUID
+	var participantID *uuid.UUID
 
-	// Apply filters if provided
+	// Parse leaderboardID if provided
 	if leaderboardIDParam != "" {
-		leaderboardID, err := uuid.Parse(leaderboardIDParam)
+		parsedID, err := uuid.Parse(leaderboardIDParam)
 		if err != nil {
 			middleware.RespondWithError(w, http.StatusBadRequest, "Invalid leaderboard ID format", err)
 			return
 		}
-		query = query.Where("leaderboard_id = ?", leaderboardID)
+		leaderboardID = &parsedID
 	}
 
+	// Parse participantID if provided
 	if participantIDParam != "" {
-		participantID, err := uuid.Parse(participantIDParam)
+		parsedID, err := uuid.Parse(participantIDParam)
 		if err != nil {
 			middleware.RespondWithError(w, http.StatusBadRequest, "Invalid participant ID format", err)
 			return
 		}
-		query = query.Where("participant_id = ?", participantID)
+		participantID = &parsedID
 	}
 
-	// Order by rank
-	query.Order("rank asc").Find(&entries)
+	entries, err := h.service.ListFilteredLeaderboardEntries(leaderboardID, participantID)
+	if err != nil {
+		middleware.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch leaderboard entries", err)
+		return
+	}
 
 	middleware.RespondWithJSON(w, http.StatusOK, entries)
 }
@@ -232,18 +234,11 @@ func ListLeaderboardEntries(w http.ResponseWriter, r *http.Request) {
 // @Failure 404 {object} middleware.ErrorResponse "Not found"
 // @Failure 500 {object} middleware.ErrorResponse "Server error"
 // @Router /leaderboard-entries/{id} [put]
-func UpdateLeaderboardEntry(w http.ResponseWriter, r *http.Request) {
+func (h *LeaderboardEntryHandler) UpdateLeaderboardEntry(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	entryID, err := uuid.Parse(idParam)
 	if err != nil {
 		middleware.RespondWithError(w, http.StatusBadRequest, "Invalid leaderboard entry ID", err)
-		return
-	}
-
-	// Fetch existing entry
-	var entry models.LeaderboardEntry
-	if err := db.DB.First(&entry, "id = ?", entryID).Error; err != nil {
-		middleware.RespondWithError(w, http.StatusNotFound, "Leaderboard entry not found", err)
 		return
 	}
 
@@ -261,27 +256,23 @@ func UpdateLeaderboardEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Apply the updates to the entry
-	if req.Score != nil {
-		entry.Score = *req.Score
-	}
-	if req.Rank != nil {
-		entry.Rank = *req.Rank
-	}
-	if req.LastUpdated != nil {
-		entry.LastUpdated = *req.LastUpdated
-	} else {
-		// Update the LastUpdated field if not explicitly provided
-		entry.LastUpdated = time.Now()
-	}
+	updatedEntry, err := h.service.UpdateLeaderboardEntry(
+		entryID,
+		req.Score,
+		req.Rank,
+		req.LastUpdated,
+	)
 
-	// Save the updated record
-	if err := db.DB.Save(&entry).Error; err != nil {
+	if err != nil {
+		if err.Error() == "leaderboard entry not found" {
+			middleware.RespondWithError(w, http.StatusNotFound, "Leaderboard entry not found", err)
+			return
+		}
 		middleware.RespondWithError(w, http.StatusInternalServerError, "Failed to update leaderboard entry", err)
 		return
 	}
 
-	middleware.RespondWithJSON(w, http.StatusOK, entry)
+	middleware.RespondWithJSON(w, http.StatusOK, updatedEntry)
 }
 
 // DeleteLeaderboardEntry deletes a leaderboard entry by ID
@@ -298,7 +289,7 @@ func UpdateLeaderboardEntry(w http.ResponseWriter, r *http.Request) {
 // @Failure 404 {object} middleware.ErrorResponse "Not found"
 // @Failure 500 {object} middleware.ErrorResponse "Server error"
 // @Router /leaderboard-entries/{id} [delete]
-func DeleteLeaderboardEntry(w http.ResponseWriter, r *http.Request) {
+func (h *LeaderboardEntryHandler) DeleteLeaderboardEntry(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	entryID, err := uuid.Parse(idParam)
 	if err != nil {
@@ -306,15 +297,12 @@ func DeleteLeaderboardEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if the entry exists
-	entry := models.LeaderboardEntry{}
-	if err := db.DB.First(&entry, "id = ?", entryID).Error; err != nil {
-		middleware.RespondWithError(w, http.StatusNotFound, "Leaderboard entry not found", err)
-		return
-	}
-
-	// Delete the entry
-	if err := db.DB.Delete(&models.LeaderboardEntry{}, "id = ?", entryID).Error; err != nil {
+	err = h.service.DeleteLeaderboardEntry(entryID)
+	if err != nil {
+		if err.Error() == "leaderboard entry not found" {
+			middleware.RespondWithError(w, http.StatusNotFound, "Leaderboard entry not found", err)
+			return
+		}
 		middleware.RespondWithError(w, http.StatusInternalServerError, "Failed to delete leaderboard entry", err)
 		return
 	}
