@@ -137,12 +137,6 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Filter by leaderboard ID",
-                        "name": "leaderboard_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
                         "description": "Filter by participant ID",
                         "name": "participant_id",
                         "in": "query"
@@ -431,14 +425,6 @@ const docTemplate = `{
                     "leaderboard-metrics"
                 ],
                 "summary": "List all metrics for a leaderboard",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Filter by leaderboard ID",
-                        "name": "leaderboard_id",
-                        "in": "query"
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "List of leaderboard metrics",
@@ -975,6 +961,950 @@ const docTemplate = `{
                 }
             }
         },
+        "/leaderboards/{leaderboard_id}/entries": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a list of all entries/rankings for a specific leaderboard",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "leaderboard-entries"
+                ],
+                "summary": "List all entries for a leaderboard",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by leaderboard ID",
+                        "name": "leaderboard_id",
+                        "in": "path"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by participant ID",
+                        "name": "participant_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of leaderboard entries",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.LeaderboardEntryResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid query parameters",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new entry/ranking in a leaderboard",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "leaderboard-entries"
+                ],
+                "summary": "Create a new leaderboard entry",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Leaderboard ID",
+                        "name": "leaderboard_id",
+                        "in": "path"
+                    },
+                    {
+                        "description": "Leaderboard entry data",
+                        "name": "entry",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreateLeaderboardEntryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created leaderboard entry",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.LeaderboardEntryResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Leaderboard or participant not found",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/leaderboards/{leaderboard_id}/metrics": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a list of all metrics associated with a specific leaderboard",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "leaderboard-metrics"
+                ],
+                "summary": "List all metrics for a leaderboard",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by leaderboard ID",
+                        "name": "leaderboard_id",
+                        "in": "path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of leaderboard metrics",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.LeaderboardMetricResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid query parameters",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new metric for a leaderboard",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "leaderboard-metrics"
+                ],
+                "summary": "Create a new leaderboard metric",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Leaderboard ID",
+                        "name": "leaderboard_id",
+                        "in": "path"
+                    },
+                    {
+                        "description": "Leaderboard metric data",
+                        "name": "metric",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreateLeaderboardMetricRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created leaderboard metric",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.LeaderboardMetricResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Leaderboard or metric not found",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/metric-values": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a list of metric values with optional filtering by metric ID and/or participant ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "metric-values"
+                ],
+                "summary": "List metric values",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Filter by timestamp (greater than or equal)",
+                        "name": "from_time",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Filter by timestamp (less than or equal)",
+                        "name": "to_time",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of metric values",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.MetricValueResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid query parameters",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new metric value record for a participant",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "metric-values"
+                ],
+                "summary": "Create a new metric value",
+                "parameters": [
+                    {
+                        "description": "Metric value data",
+                        "name": "metric_value",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreateMetricValueRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created metric value",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MetricValueResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Metric or participant not found",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/metric-values/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve a metric value by its unique ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "metric-values"
+                ],
+                "summary": "Get a metric value by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Metric Value ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Metric value details",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MetricValueResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid ID",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update an existing metric value with the provided details",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "metric-values"
+                ],
+                "summary": "Update a metric value",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Metric Value ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated metric value data",
+                        "name": "metric_value",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.UpdateMetricValueRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated metric value",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MetricValueResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a metric value by its ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "metric-values"
+                ],
+                "summary": "Delete a metric value",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Metric Value ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "400": {
+                        "description": "Invalid ID",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/metrics": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a list of all metrics",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "metrics"
+                ],
+                "summary": "List all metrics",
+                "responses": {
+                    "200": {
+                        "description": "List of metrics",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.MetricResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new metric with the provided details",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "metrics"
+                ],
+                "summary": "Create a new metric",
+                "parameters": [
+                    {
+                        "description": "Metric data",
+                        "name": "metric",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreateMetricRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created metric",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MetricResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/metrics/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve a metric by its unique ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "metrics"
+                ],
+                "summary": "Get a metric by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Metric ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Metric details",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MetricResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid ID",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update an existing metric with the provided details",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "metrics"
+                ],
+                "summary": "Update a metric",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Metric ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated metric data",
+                        "name": "metric",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.UpdateMetricRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated metric",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MetricResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a metric by its ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "metrics"
+                ],
+                "summary": "Delete a metric",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Metric ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "400": {
+                        "description": "Invalid ID",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/metrics/{metric_id}/values": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a list of metric values with optional filtering by metric ID and/or participant ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "metric-values"
+                ],
+                "summary": "List metric values",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by metric ID",
+                        "name": "metric_id",
+                        "in": "path"
+                    },
+                    {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Filter by timestamp (greater than or equal)",
+                        "name": "from_time",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Filter by timestamp (less than or equal)",
+                        "name": "to_time",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of metric values",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.MetricValueResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid query parameters",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new metric value record for a participant",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "metric-values"
+                ],
+                "summary": "Create a new metric value",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Metric ID",
+                        "name": "metric_id",
+                        "in": "path"
+                    },
+                    {
+                        "description": "Metric value data",
+                        "name": "metric_value",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreateMetricValueRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created metric value",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MetricValueResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Metric or participant not found",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/participants": {
             "get": {
                 "security": [
@@ -1245,6 +2175,138 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/participants/{participant_id}/metric-values": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a list of metric values with optional filtering by metric ID and/or participant ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "metric-values"
+                ],
+                "summary": "List metric values",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by participant ID",
+                        "name": "participant_id",
+                        "in": "path"
+                    },
+                    {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Filter by timestamp (greater than or equal)",
+                        "name": "from_time",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Filter by timestamp (less than or equal)",
+                        "name": "to_time",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of metric values",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.MetricValueResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid query parameters",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new metric value record for a participant",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "metric-values"
+                ],
+                "summary": "Create a new metric value",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Participant ID",
+                        "name": "participant_id",
+                        "in": "path"
+                    },
+                    {
+                        "description": "Metric value data",
+                        "name": "metric_value",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreateMetricValueRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created metric value",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MetricValueResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Metric or participant not found",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1383,6 +2445,97 @@ const docTemplate = `{
                         "private"
                     ],
                     "example": "public"
+                }
+            }
+        },
+        "handlers.CreateMetricRequest": {
+            "type": "object",
+            "required": [
+                "aggregation_type",
+                "data_type",
+                "name",
+                "reset_period"
+            ],
+            "properties": {
+                "aggregation_type": {
+                    "type": "string",
+                    "enum": [
+                        "sum",
+                        "average",
+                        "count",
+                        "min",
+                        "max",
+                        "last"
+                    ],
+                    "example": "sum"
+                },
+                "data_type": {
+                    "type": "string",
+                    "enum": [
+                        "integer",
+                        "decimal",
+                        "boolean",
+                        "string"
+                    ],
+                    "example": "integer"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Number of calls completed in a month"
+                },
+                "is_higher_better": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "monthly_calls_completed"
+                },
+                "reset_period": {
+                    "type": "string",
+                    "enum": [
+                        "none",
+                        "daily",
+                        "weekly",
+                        "monthly",
+                        "yearly"
+                    ],
+                    "example": "monthly"
+                },
+                "unit": {
+                    "type": "string",
+                    "example": "calls"
+                }
+            }
+        },
+        "handlers.CreateMetricValueRequest": {
+            "type": "object",
+            "required": [
+                "metric_id",
+                "participant_id",
+                "value"
+            ],
+            "properties": {
+                "context": {},
+                "metric_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "participant_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440001"
+                },
+                "source": {
+                    "type": "string",
+                    "example": "call_system"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "value": {
+                    "type": "number",
+                    "example": 42.5
                 }
             }
         },
@@ -1581,6 +2734,89 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.MetricResponse": {
+            "type": "object",
+            "properties": {
+                "aggregation_type": {
+                    "type": "string",
+                    "example": "sum"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "data_type": {
+                    "type": "string",
+                    "example": "integer"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Number of calls completed in a month"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "is_higher_better": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "monthly_calls_completed"
+                },
+                "reset_period": {
+                    "type": "string",
+                    "example": "monthly"
+                },
+                "unit": {
+                    "type": "string",
+                    "example": "calls"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                }
+            }
+        },
+        "handlers.MetricValueResponse": {
+            "type": "object",
+            "properties": {
+                "context": {},
+                "created_at": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440002"
+                },
+                "metric_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "participant_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440001"
+                },
+                "source": {
+                    "type": "string",
+                    "example": "call_system"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "value": {
+                    "type": "number",
+                    "example": 42.5
+                }
+            }
+        },
         "handlers.ParticipantResponse": {
             "type": "object",
             "properties": {
@@ -1731,6 +2967,78 @@ const docTemplate = `{
                         "private"
                     ],
                     "example": "private"
+                }
+            }
+        },
+        "handlers.UpdateMetricRequest": {
+            "type": "object",
+            "properties": {
+                "aggregation_type": {
+                    "type": "string",
+                    "enum": [
+                        "sum",
+                        "average",
+                        "count",
+                        "min",
+                        "max",
+                        "last"
+                    ],
+                    "example": "sum"
+                },
+                "data_type": {
+                    "type": "string",
+                    "enum": [
+                        "integer",
+                        "decimal",
+                        "boolean",
+                        "string"
+                    ],
+                    "example": "integer"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Number of texts answered in a month"
+                },
+                "is_higher_better": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "monthly_texts_answered"
+                },
+                "reset_period": {
+                    "type": "string",
+                    "enum": [
+                        "none",
+                        "daily",
+                        "weekly",
+                        "monthly",
+                        "yearly"
+                    ],
+                    "example": "monthly"
+                },
+                "unit": {
+                    "type": "string",
+                    "example": "texts"
+                }
+            }
+        },
+        "handlers.UpdateMetricValueRequest": {
+            "type": "object",
+            "properties": {
+                "context": {},
+                "source": {
+                    "type": "string",
+                    "example": "text_system"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2023-01-02T00:00:00Z"
+                },
+                "value": {
+                    "type": "number",
+                    "example": 50.75
                 }
             }
         },

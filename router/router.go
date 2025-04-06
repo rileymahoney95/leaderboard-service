@@ -3,14 +3,38 @@ package router
 import (
 	"net/http"
 
-	"leaderboard-service/handlers"
 	"leaderboard-service/middleware"
 
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
-	httpSwagger "github.com/swaggo/http-swagger"
 )
 
+// Define types for route setup functions for better organization
+type RouteSetupFunc func(r chi.Router)
+
+// RouteGroups holds all the route setup functions
+type RouteGroups struct {
+	Public    []RouteSetupFunc
+	Protected []RouteSetupFunc
+}
+
+// Global route groups that will be populated by init() functions in other files
+var routes = RouteGroups{
+	Public:    []RouteSetupFunc{},
+	Protected: []RouteSetupFunc{},
+}
+
+// RegisterPublicRoutes adds route setup functions to the public routes list
+func RegisterPublicRoutes(setupFunc RouteSetupFunc) {
+	routes.Public = append(routes.Public, setupFunc)
+}
+
+// RegisterProtectedRoutes adds route setup functions to the protected routes list
+func RegisterProtectedRoutes(setupFunc RouteSetupFunc) {
+	routes.Protected = append(routes.Protected, setupFunc)
+}
+
+// Router creates and configures the main router
 func Router() http.Handler {
 	r := chi.NewRouter()
 
@@ -20,90 +44,20 @@ func Router() http.Handler {
 	r.Use(middleware.RequestLogger) // Our custom request logger
 	r.Use(chimiddleware.Recoverer)
 
-	// Public routes
-	r.Group(func(r chi.Router) {
-		// Base routes
-		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
-		})
-		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
-		})
-
-		// Swagger documentation
-		r.Get("/swagger/*", httpSwagger.Handler(
-			httpSwagger.URL("/swagger/doc.json"), // The URL pointing to API definition
-		))
-
-		// Authentication routes
-		r.Post("/auth/login", handlers.Login)
-		r.Post("/auth/register", handlers.Register)
-	})
+	// Mount public routes
+	for _, setupFunc := range routes.Public {
+		setupFunc(r)
+	}
 
 	// Protected routes - require JWT authentication
 	r.Group(func(r chi.Router) {
 		// Apply JWT authentication middleware
 		r.Use(middleware.JWTAuth)
 
-		// Leaderboard routes
-		r.Route("/leaderboards", func(r chi.Router) {
-			// Public leaderboard endpoints - any authenticated user can access
-			r.Get("/", handlers.ListLeaderboards)
-			r.Get("/{id}", handlers.GetLeaderboard)
-
-			// Admin-only leaderboard endpoints
-			r.Group(func(r chi.Router) {
-				r.Use(middleware.RequireAnyRole(middleware.RoleAdmin, middleware.RoleModerator))
-				r.Post("/", handlers.CreateLeaderboard)
-				r.Put("/{id}", handlers.UpdateLeaderboard)
-				r.Delete("/{id}", handlers.DeleteLeaderboard)
-			})
-		})
-
-		// Participant routes
-		r.Route("/participants", func(r chi.Router) {
-			// Public participant endpoints - any authenticated user can access
-			r.Get("/", handlers.ListParticipants)
-			r.Get("/{id}", handlers.GetParticipant)
-
-			// Admin-only participant endpoints
-			r.Group(func(r chi.Router) {
-				r.Use(middleware.RequireAnyRole(middleware.RoleAdmin, middleware.RoleModerator))
-				r.Post("/", handlers.CreateParticipant)
-				r.Put("/{id}", handlers.UpdateParticipant)
-				r.Delete("/{id}", handlers.DeleteParticipant)
-			})
-		})
-
-		// Leaderboard Entry routes
-		r.Route("/leaderboard-entries", func(r chi.Router) {
-			// Public leaderboard entry endpoints - any authenticated user can access
-			r.Get("/", handlers.ListLeaderboardEntries)
-			r.Get("/{id}", handlers.GetLeaderboardEntry)
-
-			// Admin-only leaderboard entry endpoints
-			r.Group(func(r chi.Router) {
-				r.Use(middleware.RequireAnyRole(middleware.RoleAdmin, middleware.RoleModerator))
-				r.Post("/", handlers.CreateLeaderboardEntry)
-				r.Put("/{id}", handlers.UpdateLeaderboardEntry)
-				r.Delete("/{id}", handlers.DeleteLeaderboardEntry)
-			})
-		})
-
-		// Leaderboard Metric routes
-		r.Route("/leaderboard-metrics", func(r chi.Router) {
-			// Public leaderboard metric endpoints - any authenticated user can access
-			r.Get("/", handlers.ListLeaderboardMetrics)
-			r.Get("/{id}", handlers.GetLeaderboardMetric)
-
-			// Admin-only leaderboard metric endpoints
-			r.Group(func(r chi.Router) {
-				r.Use(middleware.RequireAnyRole(middleware.RoleAdmin, middleware.RoleModerator))
-				r.Post("/", handlers.CreateLeaderboardMetric)
-				r.Put("/{id}", handlers.UpdateLeaderboardMetric)
-				r.Delete("/{id}", handlers.DeleteLeaderboardMetric)
-			})
-		})
+		// Mount all protected routes
+		for _, setupFunc := range routes.Protected {
+			setupFunc(r)
+		}
 	})
 
 	return r

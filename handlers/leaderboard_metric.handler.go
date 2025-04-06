@@ -47,6 +47,7 @@ type LeaderboardMetricResponse struct {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
+// @Param leaderboard_id path string false "Leaderboard ID"
 // @Param metric body CreateLeaderboardMetricRequest true "Leaderboard metric data"
 // @Success 201 {object} LeaderboardMetricResponse "Created leaderboard metric"
 // @Failure 400 {object} middleware.ErrorResponse "Invalid request"
@@ -54,6 +55,7 @@ type LeaderboardMetricResponse struct {
 // @Failure 404 {object} middleware.ErrorResponse "Leaderboard or metric not found"
 // @Failure 500 {object} middleware.ErrorResponse "Server error"
 // @Router /leaderboard-metrics [post]
+// @Router /leaderboards/{leaderboard_id}/metrics [post]
 func CreateLeaderboardMetric(w http.ResponseWriter, r *http.Request) {
 	var req CreateLeaderboardMetricRequest
 
@@ -61,6 +63,14 @@ func CreateLeaderboardMetric(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		middleware.RespondWithError(w, http.StatusBadRequest, "Invalid request payload", err)
 		return
+	}
+
+	// Check if this is a nested route call
+	leaderboardIDPath := chi.URLParam(r, "id")
+
+	// Override request values with path parameters if available
+	if leaderboardIDPath != "" {
+		req.LeaderboardID = leaderboardIDPath
 	}
 
 	// Validate using validator package
@@ -149,14 +159,20 @@ func GetLeaderboardMetric(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param leaderboard_id query string false "Filter by leaderboard ID"
+// @Param leaderboard_id path string false "Filter by leaderboard ID"
 // @Success 200 {array} LeaderboardMetricResponse "List of leaderboard metrics"
 // @Failure 400 {object} middleware.ErrorResponse "Invalid query parameters"
 // @Failure 401 {object} middleware.ErrorResponse "Unauthorized"
 // @Router /leaderboard-metrics [get]
+// @Router /leaderboards/{leaderboard_id}/metrics [get]
 func ListLeaderboardMetrics(w http.ResponseWriter, r *http.Request) {
-	// Get query parameters
-	leaderboardIDParam := r.URL.Query().Get("leaderboard_id")
+	// Check if this is a nested route call
+	leaderboardIDParam := chi.URLParam(r, "id")
+
+	// If not from nested route, check query parameter
+	if leaderboardIDParam == "" {
+		leaderboardIDParam = r.URL.Query().Get("leaderboard_id")
+	}
 
 	metrics := []models.LeaderboardMetric{}
 	query := db.DB

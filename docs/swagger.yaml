@@ -105,6 +105,76 @@ definitions:
     - type
     - visibility_scope
     type: object
+  handlers.CreateMetricRequest:
+    properties:
+      aggregation_type:
+        enum:
+        - sum
+        - average
+        - count
+        - min
+        - max
+        - last
+        example: sum
+        type: string
+      data_type:
+        enum:
+        - integer
+        - decimal
+        - boolean
+        - string
+        example: integer
+        type: string
+      description:
+        example: Number of calls completed in a month
+        type: string
+      is_higher_better:
+        example: true
+        type: boolean
+      name:
+        example: monthly_calls_completed
+        type: string
+      reset_period:
+        enum:
+        - none
+        - daily
+        - weekly
+        - monthly
+        - yearly
+        example: monthly
+        type: string
+      unit:
+        example: calls
+        type: string
+    required:
+    - aggregation_type
+    - data_type
+    - name
+    - reset_period
+    type: object
+  handlers.CreateMetricValueRequest:
+    properties:
+      context: {}
+      metric_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      participant_id:
+        example: 550e8400-e29b-41d4-a716-446655440001
+        type: string
+      source:
+        example: call_system
+        type: string
+      timestamp:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      value:
+        example: 42.5
+        type: number
+    required:
+    - metric_id
+    - participant_id
+    - value
+    type: object
   handlers.CreateParticipantRequest:
     properties:
       external_id:
@@ -247,6 +317,67 @@ definitions:
         example: 550e8400-e29b-41d4-a716-446655440000
         type: string
     type: object
+  handlers.MetricResponse:
+    properties:
+      aggregation_type:
+        example: sum
+        type: string
+      created_at:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      data_type:
+        example: integer
+        type: string
+      description:
+        example: Number of calls completed in a month
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      is_higher_better:
+        example: true
+        type: boolean
+      name:
+        example: monthly_calls_completed
+        type: string
+      reset_period:
+        example: monthly
+        type: string
+      unit:
+        example: calls
+        type: string
+      updated_at:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+    type: object
+  handlers.MetricValueResponse:
+    properties:
+      context: {}
+      created_at:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440002
+        type: string
+      metric_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      participant_id:
+        example: 550e8400-e29b-41d4-a716-446655440001
+        type: string
+      source:
+        example: call_system
+        type: string
+      timestamp:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      updated_at:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      value:
+        example: 42.5
+        type: number
+    type: object
   handlers.ParticipantResponse:
     properties:
       created_at:
@@ -360,6 +491,61 @@ definitions:
         example: private
         type: string
     type: object
+  handlers.UpdateMetricRequest:
+    properties:
+      aggregation_type:
+        enum:
+        - sum
+        - average
+        - count
+        - min
+        - max
+        - last
+        example: sum
+        type: string
+      data_type:
+        enum:
+        - integer
+        - decimal
+        - boolean
+        - string
+        example: integer
+        type: string
+      description:
+        example: Number of texts answered in a month
+        type: string
+      is_higher_better:
+        example: true
+        type: boolean
+      name:
+        example: monthly_texts_answered
+        type: string
+      reset_period:
+        enum:
+        - none
+        - daily
+        - weekly
+        - monthly
+        - yearly
+        example: monthly
+        type: string
+      unit:
+        example: texts
+        type: string
+    type: object
+  handlers.UpdateMetricValueRequest:
+    properties:
+      context: {}
+      source:
+        example: text_system
+        type: string
+      timestamp:
+        example: "2023-01-02T00:00:00Z"
+        type: string
+      value:
+        example: 50.75
+        type: number
+    type: object
   handlers.UpdateParticipantRequest:
     properties:
       external_id:
@@ -467,10 +653,6 @@ paths:
       - application/json
       description: Get a list of all entries/rankings for a specific leaderboard
       parameters:
-      - description: Filter by leaderboard ID
-        in: query
-        name: leaderboard_id
-        type: string
       - description: Filter by participant ID
         in: query
         name: participant_id
@@ -656,11 +838,6 @@ paths:
       consumes:
       - application/json
       description: Get a list of all metrics associated with a specific leaderboard
-      parameters:
-      - description: Filter by leaderboard ID
-        in: query
-        name: leaderboard_id
-        type: string
       produces:
       - application/json
       responses:
@@ -1010,6 +1187,612 @@ paths:
       summary: Update a leaderboard
       tags:
       - leaderboards
+  /leaderboards/{leaderboard_id}/entries:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all entries/rankings for a specific leaderboard
+      parameters:
+      - description: Filter by leaderboard ID
+        in: path
+        name: leaderboard_id
+        type: string
+      - description: Filter by participant ID
+        in: query
+        name: participant_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of leaderboard entries
+          schema:
+            items:
+              $ref: '#/definitions/handlers.LeaderboardEntryResponse'
+            type: array
+        "400":
+          description: Invalid query parameters
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List all entries for a leaderboard
+      tags:
+      - leaderboard-entries
+    post:
+      consumes:
+      - application/json
+      description: Create a new entry/ranking in a leaderboard
+      parameters:
+      - description: Leaderboard ID
+        in: path
+        name: leaderboard_id
+        type: string
+      - description: Leaderboard entry data
+        in: body
+        name: entry
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateLeaderboardEntryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created leaderboard entry
+          schema:
+            $ref: '#/definitions/handlers.LeaderboardEntryResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "404":
+          description: Leaderboard or participant not found
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new leaderboard entry
+      tags:
+      - leaderboard-entries
+  /leaderboards/{leaderboard_id}/metrics:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all metrics associated with a specific leaderboard
+      parameters:
+      - description: Filter by leaderboard ID
+        in: path
+        name: leaderboard_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of leaderboard metrics
+          schema:
+            items:
+              $ref: '#/definitions/handlers.LeaderboardMetricResponse'
+            type: array
+        "400":
+          description: Invalid query parameters
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List all metrics for a leaderboard
+      tags:
+      - leaderboard-metrics
+    post:
+      consumes:
+      - application/json
+      description: Create a new metric for a leaderboard
+      parameters:
+      - description: Leaderboard ID
+        in: path
+        name: leaderboard_id
+        type: string
+      - description: Leaderboard metric data
+        in: body
+        name: metric
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateLeaderboardMetricRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created leaderboard metric
+          schema:
+            $ref: '#/definitions/handlers.LeaderboardMetricResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "404":
+          description: Leaderboard or metric not found
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new leaderboard metric
+      tags:
+      - leaderboard-metrics
+  /metric-values:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of metric values with optional filtering by metric ID
+        and/or participant ID
+      parameters:
+      - description: Filter by timestamp (greater than or equal)
+        format: date-time
+        in: query
+        name: from_time
+        type: string
+      - description: Filter by timestamp (less than or equal)
+        format: date-time
+        in: query
+        name: to_time
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of metric values
+          schema:
+            items:
+              $ref: '#/definitions/handlers.MetricValueResponse'
+            type: array
+        "400":
+          description: Invalid query parameters
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List metric values
+      tags:
+      - metric-values
+    post:
+      consumes:
+      - application/json
+      description: Create a new metric value record for a participant
+      parameters:
+      - description: Metric value data
+        in: body
+        name: metric_value
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateMetricValueRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created metric value
+          schema:
+            $ref: '#/definitions/handlers.MetricValueResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "404":
+          description: Metric or participant not found
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new metric value
+      tags:
+      - metric-values
+  /metric-values/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a metric value by its ID
+      parameters:
+      - description: Metric Value ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No content
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a metric value
+      tags:
+      - metric-values
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a metric value by its unique ID
+      parameters:
+      - description: Metric Value ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Metric value details
+          schema:
+            $ref: '#/definitions/handlers.MetricValueResponse'
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a metric value by ID
+      tags:
+      - metric-values
+    put:
+      consumes:
+      - application/json
+      description: Update an existing metric value with the provided details
+      parameters:
+      - description: Metric Value ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated metric value data
+        in: body
+        name: metric_value
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateMetricValueRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated metric value
+          schema:
+            $ref: '#/definitions/handlers.MetricValueResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a metric value
+      tags:
+      - metric-values
+  /metrics:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all metrics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of metrics
+          schema:
+            items:
+              $ref: '#/definitions/handlers.MetricResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List all metrics
+      tags:
+      - metrics
+    post:
+      consumes:
+      - application/json
+      description: Create a new metric with the provided details
+      parameters:
+      - description: Metric data
+        in: body
+        name: metric
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateMetricRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created metric
+          schema:
+            $ref: '#/definitions/handlers.MetricResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new metric
+      tags:
+      - metrics
+  /metrics/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a metric by its ID
+      parameters:
+      - description: Metric ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No content
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a metric
+      tags:
+      - metrics
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a metric by its unique ID
+      parameters:
+      - description: Metric ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Metric details
+          schema:
+            $ref: '#/definitions/handlers.MetricResponse'
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a metric by ID
+      tags:
+      - metrics
+    put:
+      consumes:
+      - application/json
+      description: Update an existing metric with the provided details
+      parameters:
+      - description: Metric ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated metric data
+        in: body
+        name: metric
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateMetricRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated metric
+          schema:
+            $ref: '#/definitions/handlers.MetricResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a metric
+      tags:
+      - metrics
+  /metrics/{metric_id}/values:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of metric values with optional filtering by metric ID
+        and/or participant ID
+      parameters:
+      - description: Filter by metric ID
+        in: path
+        name: metric_id
+        type: string
+      - description: Filter by timestamp (greater than or equal)
+        format: date-time
+        in: query
+        name: from_time
+        type: string
+      - description: Filter by timestamp (less than or equal)
+        format: date-time
+        in: query
+        name: to_time
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of metric values
+          schema:
+            items:
+              $ref: '#/definitions/handlers.MetricValueResponse'
+            type: array
+        "400":
+          description: Invalid query parameters
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List metric values
+      tags:
+      - metric-values
+    post:
+      consumes:
+      - application/json
+      description: Create a new metric value record for a participant
+      parameters:
+      - description: Metric ID
+        in: path
+        name: metric_id
+        type: string
+      - description: Metric value data
+        in: body
+        name: metric_value
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateMetricValueRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created metric value
+          schema:
+            $ref: '#/definitions/handlers.MetricValueResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "404":
+          description: Metric or participant not found
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new metric value
+      tags:
+      - metric-values
   /participants:
     get:
       consumes:
@@ -1183,6 +1966,92 @@ paths:
       summary: Update a participant
       tags:
       - participants
+  /participants/{participant_id}/metric-values:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of metric values with optional filtering by metric ID
+        and/or participant ID
+      parameters:
+      - description: Filter by participant ID
+        in: path
+        name: participant_id
+        type: string
+      - description: Filter by timestamp (greater than or equal)
+        format: date-time
+        in: query
+        name: from_time
+        type: string
+      - description: Filter by timestamp (less than or equal)
+        format: date-time
+        in: query
+        name: to_time
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of metric values
+          schema:
+            items:
+              $ref: '#/definitions/handlers.MetricValueResponse'
+            type: array
+        "400":
+          description: Invalid query parameters
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List metric values
+      tags:
+      - metric-values
+    post:
+      consumes:
+      - application/json
+      description: Create a new metric value record for a participant
+      parameters:
+      - description: Participant ID
+        in: path
+        name: participant_id
+        type: string
+      - description: Metric value data
+        in: body
+        name: metric_value
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateMetricValueRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created metric value
+          schema:
+            $ref: '#/definitions/handlers.MetricValueResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "404":
+          description: Metric or participant not found
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new metric value
+      tags:
+      - metric-values
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer" followed by a space and the JWT token.

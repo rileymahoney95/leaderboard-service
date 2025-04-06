@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"leaderboard-service/db"
+	"leaderboard-service/db/migrations"
 	_ "leaderboard-service/docs" // Import generated Swagger docs
-	"leaderboard-service/migrations"
 	"leaderboard-service/models"
 	"leaderboard-service/router"
 
@@ -45,7 +45,14 @@ func main() {
 	}
 
 	// Then run auto-migration
-	err = db.DB.AutoMigrate(&models.Leaderboard{}, &models.LeaderboardMetric{}, &models.LeaderboardEntry{}, &models.Participant{})
+	err = db.DB.AutoMigrate(
+		&models.Leaderboard{},
+		&models.LeaderboardMetric{},
+		&models.LeaderboardEntry{},
+		&models.Participant{},
+		&models.Metric{},
+		&models.MetricValue{},
+	)
 	if err != nil {
 		log.Fatal("Error migrating database: ", err)
 	}
